@@ -10,20 +10,22 @@ export default function HomePage() {
   const [progress, setProgress] = useState(0); // 0〜100%
   const [currentTime, setCurrentTime] = useState(0); // 秒
   const [totalTime, setTotalTime] = useState(0); // 秒
-  const [filter, setFilter] = useState<"all" | "short" | "long">("all");
+  const [filter, setFilter] = useState<
+    "all" | "short" | "long" | "english" | "inst"
+  >("all");
 
   // 連続再生系
-  const [isContinuous, setIsContinuous] = useState(false);      // 種類連続
-  const [repeatOne, setRepeatOne] = useState(false);            // 1曲リピート
+  const [isContinuous, setIsContinuous] = useState(false); // 種類連続
+  const [repeatOne, setRepeatOne] = useState(false); // 1曲リピート
   const [usePlaylistLoop, setUsePlaylistLoop] = useState(false); // プレイリスト連続
-  const [shuffle, setShuffle] = useState(false);                // シャッフル
+  const [shuffle, setShuffle] = useState(false); // シャッフル
 
   // プレイリスト（Track の id）
   const [playlistIds, setPlaylistIds] = useState<number[]>([]);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // フィルタ済みリスト
+  // フィルタ済みリスト（表示中の種類）
   const filteredTracks =
     filter === "all" ? tracks : tracks.filter((t) => t.type === filter);
 
@@ -97,7 +99,6 @@ export default function HomePage() {
         return;
       }
 
-      // 次の曲を決めるロジック
       let next: (typeof tracks)[number] | null = null;
 
       if (usePlaylistLoop && playlistTracks.length > 0) {
@@ -110,7 +111,7 @@ export default function HomePage() {
           next = playlistTracks[nextIdx];
         }
       } else if (isContinuous) {
-        // 🎵 種類連続
+        // 🎵 種類連続（type ごと）
         const sameTypeList = tracks.filter((t) => t.type === track.type);
         if (sameTypeList.length > 0) {
           if (shuffle) {
@@ -122,8 +123,9 @@ export default function HomePage() {
           }
         }
       } else if (shuffle) {
-        // 🎵 シャッフルのみON → 全曲からランダム
-        next = pickRandom(tracks, track.id);
+        // 🎵 シャッフルのみON → 「表示中の種類」からランダム
+        const shuffleList = filteredTracks;
+        next = pickRandom(shuffleList as any, track.id);
       }
 
       if (next) {
@@ -177,6 +179,22 @@ export default function HomePage() {
     setCurrentTime(0);
   };
 
+  // タイプごとにバッジ色を変える
+  const typeColor = (type: string) => {
+    switch (type) {
+      case "short":
+        return "#d6e4ff";
+      case "long":
+        return "#ffe0e6";
+      case "english":
+        return "#e0ffe7";
+      case "inst":
+        return "#fff3cd";
+      default:
+        return "#e3e6f0";
+    }
+  };
+
   return (
     <div
       style={{
@@ -186,7 +204,7 @@ export default function HomePage() {
           "linear-gradient(180deg, #f5f7ff 0%, #fdfbff 40%, #f6fbff 100%)",
       }}
     >
-      {/* ===== 上部固定プレイヤー（デザイン改良） ===== */}
+      {/* ===== 上部固定プレイヤー ===== */}
       <div
         style={{
           position: "fixed",
@@ -221,7 +239,8 @@ export default function HomePage() {
                 minHeight: "20px",
               }}
             >
-              🎧 {currentTrack ? currentTrack.title : "再生する曲を選んでください"}
+              🎧{" "}
+              {currentTrack ? currentTrack.title : "再生する曲を選んでください"}
             </div>
             <div style={{ fontSize: "11px", opacity: 0.9 }}>
               {isPlaying ? "▶ 再生中" : "⏹ 停止中"}
@@ -282,44 +301,48 @@ export default function HomePage() {
               onClick={() => setIsContinuous((prev) => !prev)}
               style={{
                 ...toggleChip,
-                background: isContinuous ? "rgba(33, 214, 123, 0.9)" : "rgba(255,255,255,0.15)",
+                background: isContinuous
+                  ? "rgba(33, 214, 123, 0.9)"
+                  : "rgba(255,255,255,0.15)",
               }}
             >
-              種類連続
-              {isContinuous ? "：ON" : "：OFF"}
+              種類連続{isContinuous ? "：ON" : "：OFF"}
             </button>
 
             <button
               onClick={() => setUsePlaylistLoop((prev) => !prev)}
               style={{
                 ...toggleChip,
-                background: usePlaylistLoop ? "rgba(149, 117, 255, 0.95)" : "rgba(255,255,255,0.15)",
+                background: usePlaylistLoop
+                  ? "rgba(149, 117, 255, 0.95)"
+                  : "rgba(255,255,255,0.15)",
               }}
             >
-              PL連続
-              {usePlaylistLoop ? "：ON" : "：OFF"}
+              PL連続{usePlaylistLoop ? "：ON" : "：OFF"}
             </button>
 
             <button
               onClick={() => setShuffle((prev) => !prev)}
               style={{
                 ...toggleChip,
-                background: shuffle ? "rgba(255, 193, 7, 0.95)" : "rgba(255,255,255,0.15)",
+                background: shuffle
+                  ? "rgba(255, 193, 7, 0.95)"
+                  : "rgba(255,255,255,0.15)",
               }}
             >
-              シャッフル
-              {shuffle ? "：ON" : "：OFF"}
+              シャッフル{shuffle ? "：ON" : "：OFF"}
             </button>
 
             <button
               onClick={() => setRepeatOne((prev) => !prev)}
               style={{
                 ...toggleChip,
-                background: repeatOne ? "rgba(255, 87, 34, 0.95)" : "rgba(255,255,255,0.15)",
+                background: repeatOne
+                  ? "rgba(255, 87, 34, 0.95)"
+                  : "rgba(255,255,255,0.15)",
               }}
             >
-              1曲リピート
-              {repeatOne ? "：ON" : "：OFF"}
+              1曲リピート{repeatOne ? "：ON" : "：OFF"}
             </button>
 
             <span style={{ fontSize: "11px", opacity: 0.9 }}>
@@ -357,7 +380,8 @@ export default function HomePage() {
             marginBottom: "16px",
           }}
         >
-          Short：TikTok 用のショートネタ曲 / Long：歌詞付きフルバージョン。
+          Short：TikTok 用のショートネタ曲 / Long：歌詞付きフルバージョン /
+          English：英語曲 / Inst：インストピアノなど。
           好きな曲をプレイリストに入れて、PL連続＋シャッフルで流しっぱなしもできます。
         </p>
 
@@ -387,6 +411,18 @@ export default function HomePage() {
             style={filterButton(filter === "long")}
           >
             LONG
+          </button>
+          <button
+            onClick={() => setFilter("english")}
+            style={filterButton(filter === "english")}
+          >
+            ENGLISH
+          </button>
+          <button
+            onClick={() => setFilter("inst")}
+            style={filterButton(filter === "inst")}
+          >
+            INST
           </button>
         </div>
 
@@ -442,16 +478,16 @@ export default function HomePage() {
                   <span
                     style={{
                       fontSize: "11px",
-                      backgroundColor:
-                        track.type === "short" ? "#d6e4ff" : "#ffe0e6",
+                      backgroundColor: typeColor(track.type),
                       color: "#333",
                       padding: "3px 8px",
                       borderRadius: "999px",
                       minWidth: "60px",
                       textAlign: "center",
+                      textTransform: "uppercase",
                     }}
                   >
-                    {track.type.toUpperCase()}
+                    {track.type}
                   </span>
 
                   <span
